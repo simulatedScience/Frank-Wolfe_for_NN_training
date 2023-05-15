@@ -5,5 +5,23 @@ Expanding on the paper, we will directly compare the algorithm to the popular Ad
 
 ## Requirements
 - Python 3.9
-- PyTorch 1.11.0
-- tqdm 4.64.0
+- PyTorch 1.11.0 -> as framework for neural networks
+- tqdm 4.64.0 -> for progressbars in pytorch training
+
+## TOODs
+- Implementation:
+  - [ ] Implement Frank-Wolfe algorithm
+  - [ ] Implement different contraints
+  - [ ] Track metrics during training
+  - [ ] Implement visualizations
+- Experiments:
+  - [ ] Test SFW on different datasets, comparing to SGD & Adam
+    - [ ] MNIST
+    - [ ] Fashion-MNIST
+    - [ ] ChemReg (first layer with sparse constraints, after that L2 regularization/ constraints)
+  - [ ] create diagrams to visualize the results
+  - [ ] explain the results
+- Presentation:
+  - [ ] create slides to explain the algorithm & constraints
+  - [ ] create slides to explain the experiments
+  - [ ] create slides to explain the results
