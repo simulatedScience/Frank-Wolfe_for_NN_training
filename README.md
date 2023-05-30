@@ -6,7 +6,7 @@ Expanding on the paper, we will directly compare the algorithm to the popular Ad
 ## Requirements
 - Python 3.9
 - PyTorch 1.11.0 -> as framework for neural networks
-- tqdm 4.64.0 -> for progressbars in pytorch training
+- PyTorch lightning 1.6 -> to simplify some pytorch code
 
 ## TOODs
 - Implementation:
