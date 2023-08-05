@@ -1,0 +1,168 @@
+\documentclass[DIV=13,10pt]{scrartcl}
+\usepackage[utf8]{inputenc}
+\usepackage[margin=2cm, footskip=.8cm]{geometry} % reduce page margin
+
+\usepackage{pdflscape} % to switch to landscape mode
+% \usepackage[ngerman]{babel}
+% \usepackage[ngerman]{babel}
+%%%%% Images %%%%%
+\usepackage{graphicx}
+% \usepackage{svg} % allow using .svg images
+\usepackage{float} % allows abritrary figure positions using option [H]
+\usepackage{wrapfig} % allows text wrapping around figures
+\usepackage{subfig} % images next to each other
+\usepackage{caption}                 % sans serif image captions #part 1
+\captionsetup{font=sf, labelfont=bf} % sans serif image captions #part 2
+
+\usepackage{url}
+\usepackage[table]{xcolor}
+% \usepackage{subfigure}
+\usepackage{enumerate}
+
+\usepackage{centernot} % um Dinge zentriert durchzustreichen
+\usepackage{paralist}
+
+\usepackage{amssymb}
+    \let\oldemptyset\emptyset
+    \let\emptyset\varnothing
+\usepackage{mathtools} %includes amsmath
+\usepackage{amsthm}
+\usepackage{mleftright}
+\usepackage{mathrsfs} %für Befehl mathscr
+\usepackage{commath}
+\usepackage{relsize} %für mathsmaller
+\usepackage{xfrac}
+\usepackage{nicefrac}
+\usepackage{mathdots} %für iddots
+\usepackage{csquotes} % for quoting and bibliography references
+
+%%% generate hyperlinks in the document
+\usepackage{hyperref}
+\hypersetup{
+    colorlinks = true,
+    urlcolor = blue, % color of online references
+    linkcolor = mydarkblue} % color of local references
+
+\usepackage[backend=bibtex, style=alphabetic]{biblatex}   % bibliography
+\addbibresource{sources.bib}
+\renewcommand*{\bibfont}{\sffamily} % change bibliograpgy font 
+
+
+\allowdisplaybreaks % allow page breaks in align
+\setlength{\parindent}{0mm} % remove indentation at the start of new paragraphs
+
+%%%%% Code Listings %%%%%
+% provides commands for including code (python, latex, ...)
+\usepackage{listings}
+\definecolor{keywords}{RGB}{255,127,33}  %orange
+\definecolor{comments}{RGB}{150,150,150} %medium grey
+\definecolor{blue}{RGB}{0,0,255}
+\definecolor{fav_blue}{RGB}{85,136,255}      %blue
+\definecolor{green}{RGB}{0,168,0}        %green
+\definecolor{grey}{RGB}{50,50,50}        %dark grey
+\definecolor{light_grey}{RGB}{245,245,245}%light grey
+\lstset{language=Python, 
+        basicstyle = \ttfamily\small, 
+        keywordstyle = \color{keywords},
+        commentstyle = \color{comments},
+        stringstyle = \color{green},
+        showstringspaces = false,
+        identifierstyle = \color{grey},
+        backgroundcolor = \color{light_grey},
+        xleftmargin = 10pt,  %text margin left
+        xrightmargin = 10pt, %text margin right
+        framexleftmargin = 5pt,  %frame margin left
+        framexrightmargin = 5pt, %frame margin right
+        numbers = left
+        }
+
+%%% the following produces a new environment like array but with automatic page breaks
+\usepackage{array,longtable}
+\usepackage{arydshln} % allow dashed table lines
+\setlength{\dashlinegap}{2pt}
+\setlength{\dashlinedash}{2pt}
+\newcolumntype{C}{>{\(\displaystyle}c<{\)}}  % automatic math mode, centered
+\newcolumntype{R}{>{\(\displaystyle}r<{\)}}
+\newcolumntype{L}{>{\(\displaystyle}l<{\)}}
+\newcolumntype{q}{>{\(}c<{\)}}  % automatic math mode, centered
+\newcolumntype{s}{>{\(}r<{\)}}
+\newcolumntype{e}{>{\(}l<{\)}}
+\setlength\tabcolsep{5pt}     % match value of \arraycolsep
+\renewcommand{\arraystretch}{1.2} % increased distance between lines in table and align environments
+
+\usepackage{chngcntr} % make table numbers depend on section
+\counterwithin{table}{section}
+\usepackage{multicol}
+
+%%% packages for pseudocode:
+\usepackage{algorithm}
+\usepackage{algorithmicx}
+\usepackage{algpseudocode}
+
+%%% TODO explain packages
+% \usepackage{fancyhdr}
+% \usepackage{lastpage}
+% \pagestyle{fancy}
+% \fancyhf{}
+% \chead{Sebastian Jost}
+
+%%%%% Math commands %%%%%
+
+\DeclarePairedDelimiterX{\nor}[1]{\lVert}{\rVert}{#1}
+\newcommand{\C}{\mathbb{C}}
+\newcommand{\R}{\mathbb{R}}
+\newcommand{\Q}{\mathbb{Q}}
+\newcommand{\Z}{\mathbb{Z}}
+\newcommand{\N}{\mathbb{N}}
+\newcommand{\E}{\mathbb{E}}
+\newcommand{\Pb}{\mathbb{P}}
+\usepackage{bbm} % für mathbbm
+\newcommand{\indf}[1]{\mathbbm{1}_{#1}} % Indikator Funktion
+
+\newcommand{\bci}[1][k]{\bigcup_{#1=1}^{\infty}}
+\newcommand{\too}[0]{\longrightarrow}
+\newcommand{\limn}[0]{\lim_{n\to \infty}}
+
+\newcommand{\eps}[0]{\varepsilon}
+\newcommand{\cnot}[0]{\centernot} % \cnot as short version of \centernot
+\newcommand{\ot}[0]{\leftarrow}
+\newcommand\numberthis{\addtocounter{equation}{1}\tag{\theequation}} % add numbering manually
+
+%%% Verteilungen
+\DeclareMathOperator{\Exp}{Exp}
+\DeclareMathOperator{\Geo}{Geo}
+\DeclareMathOperator{\Bin}{Bin}
+\DeclareMathOperator{\id}{id}
+
+%%% Varianz und Kovarianz
+\DeclareMathOperator{\Var}{Var}
+\DeclareMathOperator{\Cov}{Cov}
+
+\DeclareMathOperator{\diag}{diag}
+
+\include{colors}
+
+% \title{Vergleich von Architekturen und Parametern neuronaler Netzwerke}
+\title{Result tables for experiments with cAdam}
+\author{Sebastian Jost}
+\date{\today}
+
+\let\oldsubsubsection=\subsubsection
+\renewcommand{\subsubsection}{%
+  \filbreak
+  \oldsubsubsection
+}
+% use bibliography file
+\bibliography{sources}
+% \bibliographystyle{abbrv}
+
+\begin{document}
+\sffamily
+% \input{title_page}
+\tableofcontents
+% \newpage
+\begin{landscape}
+
+\input{result_tables}
+\end{landscape}
+\end{document}
