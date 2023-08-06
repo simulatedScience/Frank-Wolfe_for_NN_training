@@ -8,9 +8,9 @@ from os import stat # file searching
 
 import numpy as np
 
-from file_management import load_pickle_file, save_train_history
+from file_management import load_pickle_file, save_picklable_object
 from helper_functions import build_filepath
-from load_md_files import load_param_info
+from load_md_files import load_batch_info
 from loss_conversion import loss_conversion
 
 
@@ -31,7 +31,7 @@ def summarize_batch(study_folder, batch_folder):
             The corresponding values are saved in the parameter dictionary `params` that also gets returned.
     """
     # load parameters used for training the given batch
-    params, optimizer_keys = load_param_info("batch_parameters", study_folder, batch_folder)
+    params, optimizer_keys = load_batch_info("batch_parameters", study_folder, batch_folder)
     if params["output_shape"] in (1, (1,)): # save loss function used to later convert loss to MAE
         loss_func = params["loss_function"]
     else:
@@ -42,7 +42,7 @@ def summarize_batch(study_folder, batch_folder):
     # calculate statistical information summarizing the performance of the trained models
     stat_results = batch_statistical_analysis(result_info, loss_func)
     # save results
-    stat_filename = save_train_history(stat_results, filename="statistical_results", sub_folders=[study_folder, batch_folder])
+    stat_filename = save_picklable_object(stat_results, filename="statistical_results", sub_folders=[study_folder, batch_folder])
     return stat_filename, params, optimizer_keys
 
 

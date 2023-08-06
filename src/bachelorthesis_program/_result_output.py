@@ -12,19 +12,19 @@ import numpy as np
 #     print("please install package 'sigfig' for better rounding")
 #     print("#"*60)
 
-from load_md_files import load_param_info
+from load_md_files import load_study_info
 from file_management import load_parameter_analysis
 from vertical_best_worst_output import print_best_worst_vertical, set_print_filepath, get_param_setting_renaming
 
 
 def show_all_results(
-        metrics=["training_time", "test_loss", "test_accuracy"],
+        metrics=["training_time_avg", "test_loss_avg", "test_accuracy_avg"],
         filename="parameter_analysis_avg.pickle",
         prec: int = 5,
         study_folder: str = None,
         use_win_count: bool = False,
         label_prefix: str = "",
-        expriment_name: str = None):
+        experiment_name: str = None):
     """
     show results for the given metrics using data from the specified file.
     if study_folder is None, filename must be an absolute path leading to the analysis results file
@@ -36,10 +36,13 @@ def show_all_results(
     # show horizontal min_max lists
     # old_print_min_max_lists(min_max_lists, metrics)
     # show vertical min_max lists
-    print_best_worst_vertical(min_max_lists, metrics,
-                              prec=prec, study_folder=study_folder,
-                              label_prefix=label_prefix,
-                              expriment_name=expriment_name)
+    print_best_worst_vertical(
+        min_max_lists,
+        metrics,
+        prec=prec,
+        study_folder=study_folder,
+        label_prefix=label_prefix,
+        experiment_name=experiment_name)
     print()
     print("-"*60)
     print()
@@ -53,7 +56,7 @@ def show_all_results(
             study_folder,
             use_win_count,
             label_prefix=label_prefix,
-            expriment_name=expriment_name)
+            expriment_name=experiment_name)
     else:
         print_param_influcence_tables(
             param_win_ratios,
@@ -63,17 +66,7 @@ def show_all_results(
             study_folder,
             use_win_count,
             label_prefix=label_prefix,
-            expriment_name=expriment_name)
-
-
-# def old_print_min_max_lists(min_max_lists, metrics):
-#     key_list = ["neurons_per_layer", "input_shape", "output_shape", "activation_functions", "last_activation_function", "layer_types", "loss_function", "training_data_percentage", "number_of_epochs", "validation_split", "number_of_repetitions", "optimizer", "learning_rate", "epsilon", "beta_1", "beta_2", "batch_size"]
-#     for metric in metrics:
-#         min_list, max_list = min_max_lists[metric]
-#         print("min list for metric:", metric)
-#         min_list.print_values_keys(key_list)
-#         print("max list for metric:", metric)
-#         max_list.print_values_keys(key_list)
+            expriment_name=experiment_name)
 
 
 def print_param_influcence_tables(param_count_results,
@@ -91,7 +84,7 @@ def print_param_influcence_tables(param_count_results,
     """
     param_setting_renaming = get_param_setting_renaming()
     # load study parameters
-    study_settings, optimizer_keys = load_param_info(
+    study_settings, optimizer_params_list = load_study_info(
         filename="study_parameters", study_folder=study_folder)
     for metric in metrics:
         # determine filename
@@ -257,7 +250,8 @@ def avg_diff_to_string(avg_diffs, prec=3):
 if __name__ == "__main__":
     # file dialog to choose study_folder
     from tkinter import filedialog
-    study_folder = filedialog.askdirectory(initialdir=".", title="Select study folder")
+    # study_folder = filedialog.askdirectory(initialdir=".", title="Select study folder")
+    study_folder = filedialog.askdirectory(title="Select study folder")
     study_folder = study_folder.split("/")[-1]
     # study_folder = "2021-09-09_21-56-12_parameter_study_debug"
 
@@ -271,9 +265,12 @@ if __name__ == "__main__":
 
     # # chemex
     # study_folder = "bachelor_thesis_parameter_study_chem"
-    metrics = ["training_time_avg", "final_val_loss_mae_avg", "test_loss_avg"]
+    # metrics = ["training_time_avg", "final_val_loss_mae_avg", "test_loss_avg"]
+    # metrics = ["training_time_avg", "test_loss_avg", "test_accuracy_avg"]
+    metrics = ["training_time_avg", "test_loss_avg"]
     # metrics = ["final_val_loss_mae_avg"]
-    show_all_results(metrics=metrics, study_folder=study_folder, filename="parameter_analysis_avg.pickle", expriment_name="chemReg_Adam")
+    show_all_results(metrics=metrics, study_folder=study_folder, filename="parameter_analysis_avg.pickle", experiment_name="sfw_1")
+    # show_all_results(metrics=metrics, study_folder=study_folder, filename="parameter_analysis_avg.pickle", experiment_name="chemReg_Adam")
     # show_all_results(metrics=metrics, study_folder=study_folder, filename="parameter_analysis_std.pickle", expriment_name="chemReg_Adam_std")
     # show_all_results(metrics=metrics, study_folder=study_folder, filename="parameter_analysis_min.pickle", expriment_name="chemReg_Adam_min")
     # show_all_results(metrics=metrics, study_folder=study_folder, filename="parameter_analysis_max.pickle", expriment_name="chemReg_Adam_max")

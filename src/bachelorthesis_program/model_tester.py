@@ -3,7 +3,10 @@ this module implements functions for evaluating performance of trained neural ne
 
 Author: Sebastian Jost
 """
-from helper_functions import auto_use_multiprocessing
+
+import torch
+
+# from helper_functions import auto_use_multiprocessing
 
 def test_model(model, test_data, batch_size=1000):
     """
@@ -17,10 +20,9 @@ def test_model(model, test_data, batch_size=1000):
     Returns:
         ??? TODO
     """
-    use_multiprocessing = auto_use_multiprocessing()
+    device = torch.device('cuda:0' if torch.cuda.is_available() else 'cpu')
     x_test, y_test = test_data
-    test_scores = model.evaluate(x_test, y_test,
+    test_scores, test_outputs = model.evaluate(x_test, y_test,
             batch_size=batch_size,
-            use_multiprocessing=use_multiprocessing,
-            verbose=0)
+            device=device)
     return test_scores

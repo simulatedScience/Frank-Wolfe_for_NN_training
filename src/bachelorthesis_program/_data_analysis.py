@@ -11,9 +11,9 @@ import numpy as np
 
 from helper_functions import build_filepath, dict_cross_product
 from batch_summary import summarize_batch
-from load_md_files import load_param_info
+from load_md_files import load_study_info
 from top_n_list import top_n_list
-from file_management import save_train_history, load_pickle_file, save_parameter_analysis
+from file_management import save_picklable_object, load_pickle_file, save_parameter_analysis
 
 
 
@@ -42,10 +42,13 @@ def statistical_analysis_of_study(study_folder):
         # summarize model performance
         summary_filepath, param_dict, optimizer_keys = summarize_batch(
             study_folder, batch_folder)
-        hashable_params = get_hashable_params(param_dict, optimizer_keys)
+        param_dict["optimizer_params"] = {key: param_dict[key] for key in optimizer_keys}
+        for key in optimizer_keys:
+            del param_dict[key]
+        hashable_params = get_hashable_params(param_dict)
         summary_files[hashable_params] = summary_filepath
     # save dictionary mapping parameters to summary filepaths
-    summary_filepath = save_train_history(
+    summary_filepath = save_picklable_object(
         summary_files, filename="summary_filepath_dict", sub_folders=study_folder)
     return summary_filepath
 
@@ -71,7 +74,7 @@ def analyse_parameter_study(study_folder, summary_filepaths_filename, stat_metri
     --------
         (str) - absolute filepath to the file containing the results of the parameter analysis
     """
-    study_settings, optimizer_keys = load_param_info(
+    study_settings, optimizer_params_list = load_study_info(
         filename="study_parameters", study_folder=study_folder)
     summary_filepath_dict = load_pickle_file(
         summary_filepaths_filename, study_folder)
@@ -108,8 +111,7 @@ def analyse_parameter_study(study_folder, summary_filepaths_filename, stat_metri
             for i, param_value in enumerate(param_values):
                 # add current parameter value to dict for hashing
                 param_dict[current_param] = param_value
-                hashable_params = get_hashable_params(
-                    param_dict, optimizer_keys)
+                hashable_params = get_hashable_params(param_dict)
                 # param_hashes[i] = hashable_params
                 param_dicts[i] = dict(param_dict)  # copy dict
                 # load summary file corresponding to current parameter settings
@@ -370,7 +372,7 @@ def init_min_max_lists(summary_dict, n_elems=5):
     return min_max_lists
 
 
-def get_hashable_params(param_dict, optimizer_keys):
+def get_hashable_params(param_dict):
     """
     convert a parameter dictionary into a hashable string used for quickly finding training files for a given parameter setting
 
@@ -382,7 +384,7 @@ def get_hashable_params(param_dict, optimizer_keys):
     --------
         (str) - string of the parameter choices
     """
-    # a hardcoded order of
+    # a hardcoded order of dict keys
     ordered_keys = [
         "neurons_per_layer",
         "input_shape",
@@ -395,9 +397,14 @@ def get_hashable_params(param_dict, optimizer_keys):
         "number_of_epochs",
         "batch_size",
         "validation_split",
-        "number_of_repetitions"
-    ] + optimizer_keys
-    parameter_tuple = tuple(param_dict[key] for key in ordered_keys)
+        "number_of_repetitions",
+    ] + list(param_dict["optimizer_params"].keys())
+    ordered_keys.sort()
+    copied_dict = param_dict.copy()
+    for key in param_dict["optimizer_params"].keys():
+        copied_dict[key] = param_dict["optimizer_params"][key]
+    
+    parameter_tuple = tuple(copied_dict[key] for key in ordered_keys)
     return str(parameter_tuple)
 
 
@@ -405,7 +412,7 @@ if __name__ == "__main__":
     import time
     import tkinter as tk
     from tkinter import filedialog
-    study_folder = tk.filedialog.askdirectory()
+    # study_folder = tk.filedialog.askdirectory()
     # study_folder = "2021-09-09_21-56-12_parameter_study_debug"
     # study_folder = "bachelor_thesis_parameter_study_mnist"
     # study_folder = "bachelor_thesis_pstudy_mnist_2"
@@ -415,6 +422,7 @@ if __name__ == "__main__":
     # study_folder = "bachelor_thesis_param_study_fastcAdam"
     # study_folder = "2021-10-17_00-01-14_parameter_study"
     # summary_filepaths_filepath = 'summary_filepath_dict.pickle'
+    study_folder = "C:\\future_D\\uni\\Humboldt Uni\\Nebenhoerer SoSe 2023\\FW_NN_training\\src\\bachelorthesis_program\\training_info\\2023-08-06_20-41-19_parameter_study"
     start_time = time.time()
     summary_filepaths_filepath = statistical_analysis_of_study(study_folder)
     end_time = time.time()

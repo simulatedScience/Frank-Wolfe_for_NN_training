@@ -69,7 +69,6 @@ def train_model(model_params, optimizer_params, training_data,
             epochs=model_params["number_of_epochs"],
             batch_size=model_params["batch_size"],
             validation_split=model_params["validation_split"],
-            constraints=model_params["optimizer_params"].get("constraints", None),
             device=device,
             verbose=0)
     training_time = time.time()-start_time

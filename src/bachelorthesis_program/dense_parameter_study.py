@@ -9,6 +9,7 @@ import time
 import itertools
 
 import torch
+import numpy as np
 
 from model_trainer import train_model
 from model_tester import test_model
@@ -54,10 +55,7 @@ def dense_parameter_study(
     """
     n_combinations = print_number_of_combinations(neural_net_params, training_params, optimizer_params_list)
     # split dataset
-    train_data, test_data = dataset
-    # convert dataset to torch tensors
-    train_data = tuple(torch.tensor(data) for data in train_data)
-    test_data = tuple(torch.tensor(data) for data in test_data)
+    train_data, test_data = dataset_to_pytorch(dataset)
     # prepare for experiments
     study_folder = fm.create_study_folder(neural_net_params, training_params, optimizer_params_list)
     repetitions = training_params["number_of_repetitions"]
@@ -71,7 +69,7 @@ def dense_parameter_study(
         for param_list in product_generator:
             # create a dictionary containing all training parameters for a single model
             sub_training_params = {key:val for key,val in zip(key_list, param_list)}
-            sub_optimizer_params = {key:sub_training_params["optimizer_params"][key] for key in optimizer_params_list[batch_folder_index]}
+            sub_optimizer_params = {key:sub_training_params["optimizer_params"][key] for key in optimizer_params_list[batch_folder_index%len(optimizer_params_list)]}
             # create folder for saving the models and training information
             if i == 0:
                 folder_path = fm.create_batch_folder(sub_training_params, sub_optimizer_params, study_folder=study_folder)
@@ -89,7 +87,7 @@ def dense_parameter_study(
             test_scores = test_model(trained_model, test_data)
             # save training and test infomation
             history.add_test_scores(test_scores)
-            fm.save_train_history(history, save_time=history.save_time, sub_folders=sub_folders)
+            fm.save_picklable_object(history, save_time=history.save_time, sub_folders=sub_folders)
             # ensure the next model is saved in the correct folder
             batch_folder_index += 1
             model_time = time.time() - model_start_time
@@ -162,3 +160,25 @@ def print_number_of_combinations(
         print(f"Therefore {n_combinations*n_trains} models will be trained and tested.")
         print("="*60)
     return n_combinations
+
+
+def dataset_to_pytorch(dataset: tuple[tuple[np.ndarray]]) -> tuple[tuple[torch.Tensor]]:
+    """
+    Convert a dataset from numpy arrays to pytorch tensors.
+
+    Args:
+        dataset (tuole[tuple[np.ndarray]]): training and test data in numpy arrays. Each tuple contains two numpy arrays, the first containing the input data and the second containing the target values.
+
+    Returns:
+        tuple[tuple[torch.Tensor]]: training and test data in pytorch tensors. Each tuple contains two torch tensors, the first containing the input data and the second containing the target values.
+    """
+    train_data, test_data = dataset
+    x_train, y_train = train_data
+    x_test, y_test = test_data
+    x_train = torch.from_numpy(x_train).float()
+    y_train = torch.from_numpy(y_train).long()
+    x_test = torch.from_numpy(x_test).float()
+    y_test = torch.from_numpy(y_test).long()
+    train_data = (x_train, y_train)
+    test_data = (x_test, y_test)
+    return train_data, test_data

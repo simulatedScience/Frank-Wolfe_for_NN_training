@@ -6,6 +6,8 @@ Author: Sebastian Jost
 import os
 import pickle
 
+import torch
+
 from helper_functions import get_date_time, get_max_key_length, build_filepath
 
 #############################################
@@ -56,7 +58,7 @@ def save_study_params(network_params, training_params, optimizer_params_list,
             file.write(f"   - {key+':':{padding_len}} {value}\n")
         file.write("\n### Optimizer setups:\n")
         for i, optimizer_settings in enumerate(optimizer_params_list):
-            file.write(f"optimizer setup #{i}\n")
+            file.write(f"{i}. optimizer setup\n")
             for key, value in optimizer_settings.items():
                 file.write(f"   - {key+':':{padding_len}} {value}\n")
 
@@ -102,7 +104,7 @@ def save_batch_info(model_params, optimizer_params,
 # file management functions after training #
 ############################################
 
-def save_model(model, filename="neural_network", save_time=None, sub_folders=None):
+def save_model(model, filename="neural_network.pt", save_time=None, sub_folders=None):
     """
     save tensorflow model to the folder `training_info` with the given filename.
     if `save_time` is given, it gets added to the beginning of the filename
@@ -131,13 +133,17 @@ def save_model(model, filename="neural_network", save_time=None, sub_folders=Non
         if isinstance(sub_folders, str):
             sub_folders = (sub_folders,)
         filepath = os.path.join(os.path.dirname(__file__), "training_info", *sub_folders, filename)
-    model.save(filepath)
-    sub_path = os.path.join("training_info", *sub_folders, filename)
+    os.makedirs(os.path.dirname(filepath), exist_ok=True)
+    # filepath = "C:\\future_D\\uni\\Humboldt Uni\\Nebenhörer SoSe 2023\\test_model.pt"
+    # with open(filepath, "w") as file:
+    #     file.write("working")
+    torch.save(model, filepath)
+    # sub_path = os.path.join("training_info", *sub_folders, filename)
     # print(f"saved model to {sub_path}")
     return filepath
 
 
-def save_train_history(history, filename="training_history", save_time=None, sub_folders=None, ending=".pickle"):
+def save_picklable_object(history, filename="training_history", save_time=None, sub_folders=None, ending=".pickle"):
     """
     save history object containing information about the training process of a neural network to `training_info` folder
     if `save_time` is given, it gets added to the beginning of the filename
@@ -207,7 +213,7 @@ def save_parameter_analysis(
             "param_win_ratios":param_win_ratios,
             "param_diff_results":param_diff_results,
             "param_best_values":param_best_values}
-    return save_train_history(parameter_analysis_results, filename=filename, sub_folders=[study_folder])
+    return save_picklable_object(parameter_analysis_results, filename=filename, sub_folders=[study_folder])
 
 
 def load_parameter_analysis(filename="parameter_analysis_results", study_folder=None):

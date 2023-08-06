@@ -168,6 +168,8 @@ def create_k_sparse_constraints(model, K=1, K_frac=None, value=300, mode='initia
         constraints.append(constraint)
     return constraints
 
+def create_k_norm_constraints(*args):
+    raise NotImplementedError
 
 #### LMO BASE CLASSES ####
 class Constraint:

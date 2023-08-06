@@ -12,7 +12,7 @@ from mnist_data_prep import load_mnist
 ####################
 
 neural_net_params = {
-    "neurons_per_layer": (32,),
+    "neurons_per_layer": [(32,), (64,)],
     "input_shape": (28, 28),
     "output_shape": 10,
     "activation_functions": "relu",
@@ -22,10 +22,10 @@ neural_net_params = {
 }
 training_params = {
     "training_data_percentage": 1,
-    "number_of_epochs": 20,
+    "number_of_epochs": 5,
     "batch_size": 100,
     "validation_split": 0.2,
-    "number_of_repetitions": 5
+    "number_of_repetitions": 3
 }
 optimizer_params = [
     {
@@ -39,18 +39,20 @@ optimizer_params = [
         "optimizer_type": "SGD",
         "learning_rate": 0.01,
     },
-    {
-        "optimizer_type": "mSFW",
-        "learning_rate": 0.01,
-        "momentum": 0.9,
-        "constraints_type": "unconstrained",
-    },
+    # {
+    #     "optimizer_type": "mSFW",
+    #     "learning_rate": 0.01,
+    #     "momentum": 0.9,
+    #     "constraints_type": "unconstrained",
+    #     "rescale": "gradient",
+    # },
     {
         "optimizer_type": "mSFW",
         "learning_rate": 0.01,
         "momentum": 0.9,
         "constraints_type": "L1",
         "constraints_radius": 300,
+        "rescale": "gradient",
     },
     {
         "optimizer_type": "mSFW",
@@ -58,6 +60,7 @@ optimizer_params = [
         "momentum": 0.9,
         "constraints_type": "L2",
         "constraints_radius": 300,
+        "rescale": "gradient",
     },
     {
         "optimizer_type": "mSFW",
@@ -65,6 +68,7 @@ optimizer_params = [
         "momentum": 0.9,
         "constraints_type": "hypercube",
         "constraints_radius": 300,
+        "rescale": "gradient",
     },
     {
         "optimizer_type": "mSFW",
@@ -73,6 +77,7 @@ optimizer_params = [
         "constraints_type": "ksparse",
         "constraints_radius": 300,
         "constraints_K": 1000,
+        "rescale": "gradient",
     },
     {
         "optimizer_type": "mSFW",
@@ -81,23 +86,26 @@ optimizer_params = [
         "constraints_type": "ksparse",
         "constraints_radius": 300,
         "constraints_K": 2500,
+        "rescale": "gradient",
     },
-    {
-        "optimizer_type": "mSFW",
-        "learning_rate": 0.01,
-        "momentum": 0.9,
-        "constraints_type": "knorm",
-        "constraints_radius": 300,
-        "constraints_K": 1000,
-    },
-    {
-        "optimizer_type": "mSFW",
-        "learning_rate": 0.01,
-        "momentum": 0.9,
-        "constraints_type": "knorm",
-        "constraints_radius": 300,
-        "constraints_K": 2500,
-    },
+    # {
+    #     "optimizer_type": "mSFW",
+    #     "learning_rate": 0.01,
+    #     "momentum": 0.9,
+    #     "constraints_type": "knorm",
+    #     "constraints_radius": 300,
+    #     "constraints_K": 1000,
+    #     "rescale": "gradient",
+    # },
+    # {
+    #     "optimizer_type": "mSFW",
+    #     "learning_rate": 0.01,
+    #     "momentum": 0.9,
+    #     "constraints_type": "knorm",
+    #     "constraints_radius": 300,
+    #     "constraints_K": 2500,
+    #     "rescale": "gradient",
+    # },
 ]
 # {
 #     "optimizer": ["adam", "c_adam"],

@@ -13,7 +13,8 @@ import sklearn.utils as skutils
 
 from _custom_optimizers import SFW # Stochastic Frank-Wolfe with momentum
 from _custom_optimizers import SGD as CSGD # Stochastic Gradient Descent with constraints
-from _constraints import LpBall, KSparsePolytope, KNormBall, Unconstrained, Constraint
+# from _constraints import LpBall, KSparsePolytope, KNormBall, Unconstrained, Constraint
+from _constraints import Constraint, create_lp_constraints, create_unconstraints, create_k_sparse_constraints, create_k_norm_constraints
 
 class NeuralNet(nn.Module):
     """
@@ -116,8 +117,7 @@ class NeuralNet(nn.Module):
         Args:
             constraints (list[Constraint]): list of constraints
         """
-        if constraints is not None:
-            self.optimizer.set_constraints(constraints)
+        self.constraints = constraints
 
     def set_optimizer(self, optimizer: optim.Optimizer):
         """
@@ -128,6 +128,33 @@ class NeuralNet(nn.Module):
         """
         self.optimizer = optimizer
         
+    @torch.no_grad()
+    def evaluate(self, x_val, y_val, batch_size=32, device="cpu"):
+        """
+        Evaluate the model on the validation data
+
+        Args:
+            x_val (torch.Tensor): input data
+            y_val (torch.Tensor): target data
+            batch_size (int, optional): batch size. Defaults to 32.
+
+        Returns:
+            tuple: (loss, output)
+        """
+        val_loss = 0
+        val_output = []
+        for i in range(0, len(x_val), batch_size):
+            x_batch = x_val[i:i+batch_size]
+            y_batch = y_val[i:i+batch_size]
+            x_batch, y_batch = x_batch.to(device), y_batch.to(device)
+            output = self.forward(x_batch)
+            val_loss += self.loss_function(output, y_batch).item()
+            val_output.append(output)
+        val_output = torch.cat(val_output)
+        self.history["val_loss"].append(val_loss)
+        if self.track_accuracy:
+            self.history["val_accuracy"].append(self.accuracy(val_output, y_val))
+        return val_loss, val_output
 
     def fit_batch(self, x_data, y_data, constraints=None):
         """
@@ -140,7 +167,6 @@ class NeuralNet(nn.Module):
         
         Returns:
         """
-        self.train() # set model to training mode (enables dropout etc.)
         output = self.forward(x_data)
         loss = self.loss_function(output, y_data)
         self.optimizer.zero_grad()
@@ -161,7 +187,6 @@ class NeuralNet(nn.Module):
         epochs: int,
         batch_size: int,
         validation_split: float,
-        constraints: list = None,
         device: str = "cpu",
         verbose: int = 0
     ):
@@ -175,9 +200,11 @@ class NeuralNet(nn.Module):
             epochs (int): number of epochs
             batch_size (int): batch size
             validation_split (float): validation split
-            constraints (list, optional): list of constraints. Defaults to None.
             verbose (int, optional): verbosity. Defaults to 0.
         """
+        self.to(device)
+        self.loss_function.to(device)
+        self.train() # set model to training mode (enables dropout etc.)
         # split data into training and validation data
         if validation_split > 0:
             n_samples = len(x_train)
@@ -195,10 +222,10 @@ class NeuralNet(nn.Module):
                 x_batch = x_train[i:i+batch_size]
                 y_batch = y_train[i:i+batch_size]
                 x_batch, y_batch = x_batch.to(device), y_batch.to(device)
-                self.fit_batch(x_batch, y_batch, constraints)
+                self.fit_batch(x_batch, y_batch, constraints=self.constraints)
             # evaluate model
             if x_validation is not None:
-                self.evaluate(x_validation, y_validation, self.loss_function)
+                self.evaluate(x_validation, y_validation, batch_size=batch_size, device=device)
             # print progress
             if verbose > 0:
                 epoch_progress: str = f"finished epoch {epoch+1}/{epochs}"
@@ -233,12 +260,12 @@ def set_optimizer(
         torch_optimizer = optim.SGD(model.parameters(), lr=params["learning_rate"])
     elif optimizer.lower() == "msfw": # Stochastic Frank-Wolfe with momentum
         torch_optimizer = SFW(model.parameters(),
-                   lr=params["learning_rate"],
-                   momentum=params["momentum"],
-                   rescale=params["rescale"])
+                   learning_rate=params["learning_rate"],
+                   momentum=params.get("momentum", 0),
+                   rescale=params.get("rescale", "gradient"),)
     elif optimizer.lower() == "csgd": # Stochastic Gradient Descent with constraints
         torch_optimizer = CSGD(model.parameters(),
-                    lr=params["learning_rate"],
+                    learning_rate=params["learning_rate"],
                     momentum=params["momentum"],
                     dampening=params["dampening"],
                     weight_decay=params["weight_decay"],
@@ -262,39 +289,46 @@ def get_constraints(
     optimizer = params["optimizer_type"]
     if optimizer.lower() != "msfw":
         constraints = None
-    elif optimizer.lower() == "msfw":
-        # number of dimensions = umber of model parameters
-        n = sum(p.numel() for p in model.parameters())
-        if params["constraints_type"].lower == "unconstrained":
-            constraints = Unconstrained(
-                n=n,
+    elif optimizer.lower() in ("msfw", "csgd"):
+        if params["constraints_type"].lower() == "unconstrained":
+            constraints = create_unconstraints(
+                model=model,
             )
-        elif params["constraints_type"].lower == "l1":
-            constraints = LpBall(
-                n=n,
+        elif params["constraints_type"].lower() in ("l1", "l_1"):
+            constraints = create_lp_constraints(
+                model=model,
                 ord=1,
-                radius=params["constraints_radius"],)
-        elif params["constraints_type"].lower == "l2":
-            constraints = LpBall(
-                n=n,
+                mode="radius",
+                value=params["constraints_radius"],
+            )
+        elif params["constraints_type"].lower() in ("l2", "l_2"):
+            constraints = create_lp_constraints(
+                model=model,
                 ord=2,
-                radius=params["constraints_radius"],)
-        elif params["constraints_type"].lower in ("linf", "hypercube"):
-            constraints = LpBall(
-                n=n,
+                mode="radius",
+                value=params["constraints_radius"],
+            )
+        elif params["constraints_type"].lower() in ("linf", "l_inf", "hypercube"):
+            constraints = create_lp_constraints(
+                model=model,
                 ord=float("inf"),
-                radius=params["constraints_radius"],)
-        elif params["constraints_type"].lower == "ksparse":
-            constraints = KSparsePolytope(
-                n=n,
+                value=params["constraints_radius"],
+            )
+        elif params["constraints_type"].lower() == "ksparse":
+            constraints = create_k_sparse_constraints(
+                model=model,
                 K=params["constraints_K"],
-                radius=params["constraints_radius"],)
+                mode="radius",
+                value=params["constraints_radius"],
+            )
         elif params["constraints_type"].lower() == "knorm":
-            constraints = KNormBall(
-                n=n,
+            constraints = create_k_norm_constraints(
+                model=model,
                 K=params["constraints_K"],
-                radius=params["constraints_radius"],)
-        return constraints
+                mode="radius",
+                value=params["constraints_radius"],
+            )
+    return constraints
     
 
 def set_loss_function(model_params):

@@ -25,7 +25,7 @@ def print_best_worst_vertical(
         color: str = "equalParamColor",
         study_folder: str = None,
         label_prefix: str = "",
-        expriment_name: str = None):
+        experiment_name: str = None):
     """
     inputs:
     -------
@@ -61,7 +61,7 @@ def print_best_worst_vertical(
         # if metric in min_max_lists[metric][0].keys[0].keys() and (metric != param_list[0]):
         if "loss" in metric:  # and (metric != param_list[0]):
             # param_list = [metric] + param_list
-            param_list = [f"test_loss_mae_{stat_metric}"] + param_list
+            # param_list = [f"test_loss_mae_{stat_metric}"] + param_list
             first_line_label = f"\\textit{ {print_metric} }" + f" ({stat_metric})"
         else:
             first_line_label = r"\textit{" + print_metric + r"}"
@@ -69,7 +69,7 @@ def print_best_worst_vertical(
         for top_n_list in min_max_lists[metric]:
             # set stdout to a file for the current table
             original_stdout, file, dataset = set_print_filepath(
-                metric, min_max, study_folder, expriment_name)
+                metric, min_max, study_folder, experiment_name)
             # print table description
             if "accuracy" in metric:
                 best_worst = "worst" if min_max == "min" else "best"
@@ -106,8 +106,9 @@ def print_best_worst_vertical(
                 #     print("", end="")
                 #     pass
                 # add color to line if all entries are equal
-                if len(set(param_settings)) == 1:
-                    line = color_line(line, color)
+                
+                # if len(set(param_settings)) == 1:
+                #     line = color_line(line, color)
                 line += " \\\\"
                 print(line)
             tex_dataset = dataset.replace("_", " ")
@@ -170,9 +171,9 @@ def get_default_param_list():
         "batch_size",
         # "validation_split",
         # "number_of_repetitions",
-        "optimizer",
-        "learning_rate",
-        "epsilon",
+        "optimizer_params",
+        # "learning_rate",
+        # "epsilon",
         # "beta_1",
         # "beta_2"
     ]
@@ -214,6 +215,14 @@ def rename_param(value, renaming_dict):
     rename the given value if it is in `renaming_dict`, otherwise replace underscores with spaces.
     return the new value
     """
+    if isinstance(value, (dict)): # optimizer parameters
+        if value["optimizer_type"].lower() in ("adam", "sgd"):
+            return value["optimizer_type"]
+        elif value["constraints_type"].lower() in ("ksparse", "knorm"):
+            return f'{value["optimizer_type"]}+{value["constraints_type"]}+{value["constraints_K"]}'
+        else:
+            return f'{value["optimizer_type"]}+{value["constraints_type"]}'
+        # return "\\\\\n".join([f"{rename_param(key, renaming_dict)}: {rename_param(val, renaming_dict)}" for key, val in value.items()])
     if value in renaming_dict:  # rename parameter setting before printing
         new_value = renaming_dict[value]
     else:  # convert underscores to spaces
@@ -244,7 +253,11 @@ def get_param_setting_renaming():
         "epsilon": "$\\varepsilon$",
         "1e-07": "$10^{-7}$",
         "1e+02": "100",
-        "undetermined": "\\textit{unclear}"
+        "undetermined": "\\textit{unclear}",
+        "learning_rate": "lr",
+        "optimizer_type": "optimizer",
+        "constraints_type": "constraints",
+        "constraints_radius": "radius",
     }
 
 
