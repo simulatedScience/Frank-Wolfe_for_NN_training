@@ -69,16 +69,9 @@ def train_model(model_params, optimizer_params, training_data,
             epochs=model_params["number_of_epochs"],
             batch_size=model_params["batch_size"],
             validation_split=model_params["validation_split"],
-            constraints=model_params["constraints"],
+            constraints=model_params["optimizer_params"].get("constraints", None),
             device=device,
             verbose=0)
-    # history = model.fit(x_train, y_train,
-    #                     # TODO: replace epochs with maximum training time
-    #                     epochs=model_params["number_of_epochs"],
-    #                     batch_size=model_params["batch_size"],
-    #                     validation_split=model_params["validation_split"],
-    #                     use_multiprocessing=use_multiprocessing,
-    #                     verbose=0)
     training_time = time.time()-start_time
     # TODO save model
     save_time = get_date_time()

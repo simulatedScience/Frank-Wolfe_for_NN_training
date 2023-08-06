@@ -7,6 +7,9 @@ Author: Sebastian Jost
 
 import time
 import itertools
+
+import torch
+
 from model_trainer import train_model
 from model_tester import test_model
 # from parameter_analysis import analyse_parameter_study # TODO implement analysis
@@ -52,6 +55,9 @@ def dense_parameter_study(
     n_combinations = print_number_of_combinations(neural_net_params, training_params, optimizer_params_list)
     # split dataset
     train_data, test_data = dataset
+    # convert dataset to torch tensors
+    train_data = tuple(torch.tensor(data) for data in train_data)
+    test_data = tuple(torch.tensor(data) for data in test_data)
     # prepare for experiments
     study_folder = fm.create_study_folder(neural_net_params, training_params, optimizer_params_list)
     repetitions = training_params["number_of_repetitions"]
@@ -65,8 +71,7 @@ def dense_parameter_study(
         for param_list in product_generator:
             # create a dictionary containing all training parameters for a single model
             sub_training_params = {key:val for key,val in zip(key_list, param_list)}
-            # sub_optimizer_params = {key:sub_training_params[key] for key in optimizer_params_list}
-            sub_optimizer_params = {key:sub_training_params[key] for key in optimizer_params_list[batch_folder_index]}
+            sub_optimizer_params = {key:sub_training_params["optimizer_params"][key] for key in optimizer_params_list[batch_folder_index]}
             # create folder for saving the models and training information
             if i == 0:
                 folder_path = fm.create_batch_folder(sub_training_params, sub_optimizer_params, study_folder=study_folder)
@@ -129,7 +134,7 @@ def param_cross_product(
 def print_number_of_combinations(
         neural_net_params,
         training_params,
-        optimizer_params,
+        optimizer_params_list,
         print_result=True):
     """
     return the number of different parameter combinations for the given inputs, not including number of training repetitions for the same set of parameters.
@@ -148,9 +153,7 @@ def print_number_of_combinations(
             continue
         if isinstance(value, list):
             n_combinations *= len(value)
-    for value in optimizer_params.values():
-        if isinstance(value, list):
-            n_combinations *= len(value)
+    n_combinations *= len(optimizer_params_list)
     if print_result:
         n_trains = training_params['number_of_repetitions']
         print("="*60)

@@ -8,7 +8,7 @@ import numpy as np
 import tensorflow.keras as keras
 
 
-def load_mnist():
+def load_mnist(one_hot=True):
     """
     load and prepare mnist data
     use one-hot encoded outputs and normalized inputs
@@ -22,7 +22,7 @@ def load_mnist():
             y_test - 10000x10 array with integer labels in range [0,1] - test labels
     """
     all_data = keras.datasets.mnist.load_data()
-    return prepare_mnist_data(all_data)
+    return prepare_mnist_data(all_data, one_hot)
 
 
 def load_raw_mnist():
@@ -59,7 +59,7 @@ def one_hot_encode(labels, n_nodes=10):
     return new_data
 
 
-def prepare_mnist_data(all_data):
+def prepare_mnist_data(all_data, one_hot=True):
     (x_train, y_train), (x_test, y_test) = all_data
     
     print("Number of original training examples:", len(x_train))
@@ -72,7 +72,7 @@ def prepare_mnist_data(all_data):
     # reshape x_test
     x_shape = x_test.shape
     x_test = x_test.reshape((x_shape[0], x_shape[1], x_shape[2]))
-    # make labels one-hot encoded
-    y_train = one_hot_encode(y_train)
-    y_test = one_hot_encode(y_test)
+    if one_hot: # make labels one-hot encoded
+        y_train = one_hot_encode(y_train)
+        y_test = one_hot_encode(y_test)
     return (x_train, y_train), (x_test, y_test)

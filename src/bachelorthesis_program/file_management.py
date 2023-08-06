@@ -39,13 +39,13 @@ def create_study_folder(network_params, training_params, optimizer_params, study
     return study_folder
 
 
-def save_study_params(network_params, training_params, optimizer_params,
+def save_study_params(network_params, training_params, optimizer_params_list,
         study_folder, filename="study_parameters.md"):
     """
     save all parameters of the parameter study as a human-readable file.
     """
     filepath = os.path.join(os.path.dirname(__file__), "training_info", study_folder, filename)
-    padding_len = 2 + get_max_key_length(network_params, training_params, optimizer_params)
+    padding_len = 2 + get_max_key_length(network_params, training_params, *optimizer_params_list)
     with open(filepath, "w") as file:
         file.write("## all parameters used in this study: \n\n")
         file.write("\n### Neural Network parameters:\n")
@@ -54,9 +54,11 @@ def save_study_params(network_params, training_params, optimizer_params,
         file.write("\n### Training parameters:\n")
         for key, value in training_params.items():
             file.write(f"   - {key+':':{padding_len}} {value}\n")
-        file.write("\n### Optimizer parameters:\n")
-        for key, value in optimizer_params.items():
-            file.write(f"   - {key+':':{padding_len}} {value}\n")
+        file.write("\n### Optimizer setups:\n")
+        for i, optimizer_settings in enumerate(optimizer_params_list):
+            file.write(f"optimizer setup #{i}\n")
+            for key, value in optimizer_settings.items():
+                file.write(f"   - {key+':':{padding_len}} {value}\n")
 
 
 def create_batch_folder(model_params, optimizer_params, study_folder=None, batch_folder=None):

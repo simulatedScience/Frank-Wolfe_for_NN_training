@@ -8,11 +8,12 @@ import numpy as np
 import torch
 import torch.nn as nn
 import torch.optim as optim
+import torchmetrics
 import sklearn.utils as skutils
 
 from _custom_optimizers import SFW # Stochastic Frank-Wolfe with momentum
 from _custom_optimizers import SGD as CSGD # Stochastic Gradient Descent with constraints
-from _constraints import LpBall, KSparsePolytope, KNormBall
+from _constraints import LpBall, KSparsePolytope, KNormBall, Unconstrained, Constraint
 
 class NeuralNet(nn.Module):
     """
@@ -20,13 +21,21 @@ class NeuralNet(nn.Module):
     """
     def __init__(self,
                  model_params: dict[str, int | tuple | list | str],
-                 optimizer: optim.Optimizer,
-                 loss_function: nn.Loss):
+                 loss_function,
+                 track_accuracy = "auto"):
         super(NeuralNet, self).__init__()
         self.model_params = model_params
-        self.optimizer = optimizer
         self.loss_function = loss_function
-
+        # initialize history
+        self.history: dict[str, list] = {"loss": [], "val_loss": []}
+        if track_accuracy == "auto":
+            self.track_accuracy: bool = True if model_params["output_shape"] == 1 else False
+        else:
+            self.track_accuracy: bool = track_accuracy
+        if self.track_accuracy:
+            self.history["accuracy"] = []
+            self.history["val_accuracy"] = []
+            
         # Setting activations
         self.activations, self.last_activation = self.set_activations(
             model_params["activation_functions"],
@@ -100,6 +109,26 @@ class NeuralNet(nn.Module):
         else:
             raise ValueError(f"Unsupported activation function: {activation_name}")
 
+    def set_constraints(self, constraints: list[Constraint]):
+        """
+        Set the constraints for the optimizer
+
+        Args:
+            constraints (list[Constraint]): list of constraints
+        """
+        if constraints is not None:
+            self.optimizer.set_constraints(constraints)
+
+    def set_optimizer(self, optimizer: optim.Optimizer):
+        """
+        Set the optimizer for the model
+
+        Args:
+            optimizer (torch.nn.optim.Optimizer): optimizer
+        """
+        self.optimizer = optimizer
+        
+
     def fit_batch(self, x_data, y_data, constraints=None):
         """
         Fit the model to the given data
@@ -116,14 +145,19 @@ class NeuralNet(nn.Module):
         loss = self.loss_function(output, y_data)
         self.optimizer.zero_grad()
         loss.backward()
-        self.optimizer.step(constraints=constraints)
+        if constraints is None:
+            self.optimizer.step()
+        else:
+            self.optimizer.step(constraints=constraints)
+        if self.track_accuracy:
+            self.history["accuracy"].append(self.accuracy(output, y_data))
+        self.history["loss"].append(loss.item())
         return loss.item(), output
     
     def fit(
         self,
-        x_train: np.ndarray,
-        y_train: np.ndarray,
-        
+        x_train: torch.Tensor,
+        y_train: torch.Tensor,
         epochs: int,
         batch_size: int,
         validation_split: float,
@@ -135,8 +169,8 @@ class NeuralNet(nn.Module):
         train the model with the given data
 
         Args:
-            x_train (np.ndarray): input data
-            y_train (np.ndarray): labels
+            x_train (torch.Tensor): input data
+            y_train (torch.Tensor): labels
             model (NeuralNet): neural network model
             epochs (int): number of epochs
             batch_size (int): batch size
@@ -161,34 +195,40 @@ class NeuralNet(nn.Module):
                 x_batch = x_train[i:i+batch_size]
                 y_batch = y_train[i:i+batch_size]
                 x_batch, y_batch = x_batch.to(device), y_batch.to(device)
-                self.fit_batch(x_batch, y_batch, self.optimizer, self.loss_function, constraints)
+                self.fit_batch(x_batch, y_batch, constraints)
             # evaluate model
             if x_validation is not None:
                 self.evaluate(x_validation, y_validation, self.loss_function)
             # print progress
             if verbose > 0:
                 epoch_progress: str = f"finished epoch {epoch+1}/{epochs}"
+        
+        return self.history
 
+def calculate_accuracy(output, y_data):
+    _, predicted = torch.max(output, 1)
+    if len(y_data.shape) > 1: # convert one-hot encoding to labels
+        _, y_data = torch.max(y_data, 1)
+    accuracy = torchmetrics.functional.accuracy(predicted, y_data)
+    return accuracy
 
-def set_optimizer_constrained(
+def set_optimizer(
         model: NeuralNet,
-        optimizer: str | torch.optim.Optimizer,
-        **params: dict):
+        **params: dict) -> torch.optim.Optimizer:
     """
-    Convert a dict of optimizer parameters to a torch optimizer and a constraints object
+    Convert a dict of optimizer parameters to a torch optimizer
 
     Args:
         model (NeuralNet): neural network model
         optimizer (str | torch.optim.Optimizer): optimizer
-        
     """
-    constraints = params.get("constraints", None)
+    optimizer = params["optimizer_type"]
     torch_optimizer = None
     if not isinstance(optimizer, str):
         torch_optimizer = optimizer
     if optimizer.lower() == "adam": # Adam
         torch_optimizer = optim.Adam(model.parameters(), lr=params["learning_rate"], eps=params["epsilon"],
-                          betas=(params["beta_1"], params["beta_2"]))
+                          betas=(params.get("beta_1", 0.9), params.get("beta_2", 0.999)))
     elif optimizer.lower() == "sgd": # Stochastic Gradient Descent
         torch_optimizer = optim.SGD(model.parameters(), lr=params["learning_rate"])
     elif optimizer.lower() == "msfw": # Stochastic Frank-Wolfe with momentum
@@ -205,19 +245,31 @@ def set_optimizer_constrained(
                     nestrov=params["nestrov"])
     else:
         raise ValueError(f"Unsupported optimizer: {optimizer}")
-    
-    constraints = get_constraints(optimizer, **params)
-    return torch_optimizer, constraints
+    return torch_optimizer
 
 def get_constraints(
-    optimizer: str,
-    **params: dict):
+        model: NeuralNet,
+        **params: dict) -> Constraint:
+    """_summary_
+
+    Args:
+        model (NeuralNet): _description_
+        optimizer (str): _description_
+
+    Returns:
+        _type_: _description_
+    """
+    optimizer = params["optimizer_type"]
     if optimizer.lower() != "msfw":
         constraints = None
     elif optimizer.lower() == "msfw":
         # number of dimensions = umber of model parameters
         n = sum(p.numel() for p in model.parameters())
-        if params["constraints_type"].lower == "l1":
+        if params["constraints_type"].lower == "unconstrained":
+            constraints = Unconstrained(
+                n=n,
+            )
+        elif params["constraints_type"].lower == "l1":
             constraints = LpBall(
                 n=n,
                 ord=1,
@@ -242,7 +294,7 @@ def get_constraints(
                 n=n,
                 K=params["constraints_K"],
                 radius=params["constraints_radius"],)
-        
+        return constraints
     
 
 def set_loss_function(model_params):
@@ -258,10 +310,14 @@ def set_loss_function(model_params):
     return loss_function
 
 def make_model(model_params, optimizer_params):
-    optimizer, constraints = set_optimizer_constrained(model, **optimizer_params)
     loss_function = set_loss_function(model_params)
-    model = NeuralNet(model_params, optimizer, loss_function, constraints)
+    
+    model = NeuralNet(model_params, loss_function)
+    optimizer = set_optimizer(model, **optimizer_params)
+    model.set_optimizer(optimizer)
+    constraints = get_constraints(model, **optimizer_params)
+    model.set_constraints(constraints)
     
 
-    return model, optimizer, loss_function
+    return model
 

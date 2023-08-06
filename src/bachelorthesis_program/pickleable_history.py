@@ -4,12 +4,12 @@ This module provides functions for saving the training history of a neural netwo
 Author: Sebastian Jost
 """
 
-def get_save_history(history_obj, model_params, optimizer_params, model_path, train_time, save_time):
+def get_save_history(history_dict, model_params, optimizer_params, model_path, train_time, save_time):
     """
     convert a given tensorflow history object into a custom pickleable object, which saves the important information.
     """
     return pickleable_history(
-            history_obj.history,
+            history_dict,
             model_params=model_params, 
             optimizer_params=optimizer_params,
             save_time=save_time,

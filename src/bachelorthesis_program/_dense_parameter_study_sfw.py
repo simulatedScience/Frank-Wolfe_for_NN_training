@@ -12,10 +12,10 @@ from mnist_data_prep import load_mnist
 ####################
 
 neural_net_params = {
-    "neurons_per_layer": [(32,), (50, 10), (20, 15, 10)],
+    "neurons_per_layer": (32,),
     "input_shape": (28, 28),
     "output_shape": 10,
-    "activation_functions": ["relu", "sigmoid"],
+    "activation_functions": "relu",
     "last_activation_function": "softmax",
     "layer_types": "dense",
     "loss_function": "categorical_crossentropy",
@@ -32,6 +32,8 @@ optimizer_params = [
         "optimizer_type": "Adam",
         "learning_rate": 0.01,
         "epsilon": 1e-7,
+        "beta_1": 0.9,
+        "beta_2": 0.999,
     },
     {
         "optimizer_type": "SGD",
@@ -96,7 +98,6 @@ optimizer_params = [
         "constraints_radius": 300,
         "constraints_K": 2500,
     },
-    
 ]
 # {
 #     "optimizer": ["adam", "c_adam"],
@@ -104,8 +105,8 @@ optimizer_params = [
 #     "epsilon": [1, 1e-7],
 #     "beta_1": 0.9,
 #     "beta_2": 0.999
-}
+# }
 
-dataset = load_mnist()
+dataset = load_mnist(one_hot=False)
 dense_parameter_study(neural_net_params, training_params,
                       optimizer_params, dataset)
