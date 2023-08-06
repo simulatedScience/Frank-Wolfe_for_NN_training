@@ -8,7 +8,6 @@ import numpy as np
 import torch
 import torch.nn as nn
 import torch.optim as optim
-import torchmetrics
 import sklearn.utils as skutils
 
 from _custom_optimizers import SFW # Stochastic Frank-Wolfe with momentum
@@ -30,7 +29,7 @@ class NeuralNet(nn.Module):
         # initialize history
         self.history: dict[str, list] = {"loss": [], "val_loss": []}
         if track_accuracy == "auto":
-            self.track_accuracy: bool = True if model_params["output_shape"] == 1 else False
+            self.track_accuracy: bool = True if model_params["output_shape"] > 1 else False
         else:
             self.track_accuracy: bool = track_accuracy
         if self.track_accuracy:
@@ -153,10 +152,10 @@ class NeuralNet(nn.Module):
         val_output = torch.cat(val_output)
         self.history["val_loss"].append(val_loss)
         if self.track_accuracy:
-            self.history["val_accuracy"].append(self.accuracy(val_output, y_val))
+            self.history["val_accuracy"].append(calculate_accuracy(val_output, y_val, device=device))
         return val_loss, val_output
 
-    def fit_batch(self, x_data, y_data, constraints=None):
+    def fit_batch(self, x_data, y_data, constraints=None, device="cpu"):
         """
         Fit the model to the given data
 
@@ -176,7 +175,7 @@ class NeuralNet(nn.Module):
         else:
             self.optimizer.step(constraints=constraints)
         if self.track_accuracy:
-            self.history["accuracy"].append(self.accuracy(output, y_data))
+            self.history["accuracy"].append(calculate_accuracy(output, y_data, device=device))
         self.history["loss"].append(loss.item())
         return loss.item(), output
     
@@ -222,7 +221,7 @@ class NeuralNet(nn.Module):
                 x_batch = x_train[i:i+batch_size]
                 y_batch = y_train[i:i+batch_size]
                 x_batch, y_batch = x_batch.to(device), y_batch.to(device)
-                self.fit_batch(x_batch, y_batch, constraints=self.constraints)
+                self.fit_batch(x_batch, y_batch, constraints=self.constraints, device=device)
             # evaluate model
             if x_validation is not None:
                 self.evaluate(x_validation, y_validation, batch_size=batch_size, device=device)
@@ -232,11 +231,15 @@ class NeuralNet(nn.Module):
         
         return self.history
 
-def calculate_accuracy(output, y_data):
+def calculate_accuracy(output, y_data, device="cpu"):
+    if output.device != y_data.device:
+        output = output.to(device)
+        y_data = y_data.to(device)
     _, predicted = torch.max(output, 1)
     if len(y_data.shape) > 1: # convert one-hot encoding to labels
         _, y_data = torch.max(y_data, 1)
-    accuracy = torchmetrics.functional.accuracy(predicted, y_data)
+    correct = (predicted == y_data).sum().item()
+    accuracy = correct / len(y_data)
     return accuracy
 
 def set_optimizer(
@@ -298,34 +301,35 @@ def get_constraints(
             constraints = create_lp_constraints(
                 model=model,
                 ord=1,
-                mode="radius",
+                mode="initialization",
                 value=params["constraints_radius"],
             )
         elif params["constraints_type"].lower() in ("l2", "l_2"):
             constraints = create_lp_constraints(
                 model=model,
                 ord=2,
-                mode="radius",
+                mode="initialization",
                 value=params["constraints_radius"],
             )
         elif params["constraints_type"].lower() in ("linf", "l_inf", "hypercube"):
             constraints = create_lp_constraints(
                 model=model,
                 ord=float("inf"),
+                mode="initialization",
                 value=params["constraints_radius"],
             )
         elif params["constraints_type"].lower() == "ksparse":
             constraints = create_k_sparse_constraints(
                 model=model,
                 K=params["constraints_K"],
-                mode="radius",
+                mode="initialization",
                 value=params["constraints_radius"],
             )
         elif params["constraints_type"].lower() == "knorm":
             constraints = create_k_norm_constraints(
                 model=model,
                 K=params["constraints_K"],
-                mode="radius",
+                mode="initialization",
                 value=params["constraints_radius"],
             )
     return constraints

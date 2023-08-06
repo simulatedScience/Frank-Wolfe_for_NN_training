@@ -121,7 +121,39 @@ def create_lp_constraints(model, ord=2, value=300, mode='initialization'):
         constraints.append(constraint)
     return constraints
 
+@torch.no_grad()
+def create_k_norm_constraints(model, K=1, value=300, mode='initialization'):
+    constraints = []
 
+    # Compute average init norms if necessary
+    init_norms = dict()
+    if mode == 'initialization':
+        for layer in model.modules():
+            if hasattr(layer, 'reset_parameters'):
+                for param_type in [entry for entry in ['weight', 'bias'] if hasattr(layer, entry)]:
+                    param = getattr(layer, param_type)
+                    shape = param.shape
+                    avg_norm = get_avg_init_norm(layer, param_type=param_type, ord=2)
+                    if avg_norm == 0.0:
+                        avg_norm = 1.0
+                    init_norms[shape] = avg_norm
+
+    for name, param in model.named_parameters():
+        n = param.numel()
+        if mode == 'radius':
+            constraint = KNormBall(n, K=K, radius=value)
+        elif mode == 'diameter':
+            constraint = KNormBall(n, K=K, diameter=value)
+        elif mode == 'initialization':
+            diameter = 2.0 * value * init_norms[param.shape]
+            constraint = KNormBall(n, K=K, diameter=diameter)
+        else:
+            raise ValueError(f"Unknown mode {mode}")
+        constraints.append(constraint)
+
+    return constraints
+
+@torch.no_grad()
 def create_k_sparse_constraints(model, K=1, K_frac=None, value=300, mode='initialization'):
     """Create KSparsePolytope constraints for each layer, where p == ord, and value depends on mode (is radius, diameter, or
     factor to multiply average initialization norm with). K can be given either as an absolute (K) or relative value (K_frac)."""
@@ -168,8 +200,6 @@ def create_k_sparse_constraints(model, K=1, K_frac=None, value=300, mode='initia
         constraints.append(constraint)
     return constraints
 
-def create_k_norm_constraints(*args):
-    raise NotImplementedError
 
 #### LMO BASE CLASSES ####
 class Constraint:
@@ -375,19 +405,19 @@ class KNormBall(Constraint):
     def __init__(self, n, K=1, diameter=None, radius=None):
         super().__init__(n)
         self.K = K
-        self.q = get_lp_complementary_order(self.p)
 
-        assert float(ord) >= 1, f"Invalid order {ord}"
         if diameter is None and radius is None:
             raise ValueError("Neither diameter nor radius given.")
         elif diameter is None:
             self._radius = radius
-            self._diameter = 2 * convert_lp_radius(radius, self.n, in_ord=self.p, out_ord=2)
+            self._diameter = 2 * radius  # Diameter for L1 norm
         elif radius is None:
-            self._radius = convert_lp_radius(diameter / 2.0, self.n, in_ord=2, out_ord=self.p)
+            self._radius = diameter / 2.0
             self._diameter = diameter
         else:
             raise ValueError("Both diameter and radius given")
+        # Radius for L_infinity norm
+        self._radius_inf = self._radius / self.K
 
     @torch.no_grad()
     def lmo(self, x):
@@ -400,19 +430,27 @@ class KNormBall(Constraint):
         maxIdx = torch.argmax(torch.abs(x))
         b_1_lmo.view(-1)[maxIdx] = -self._radius * torch.sign(x.view(-1)[maxIdx])
         # calculate lmo for B_inf(r*K)
-        b_inf_lmo = torch.full_like(x, fill_value=self._radius*self.K).masked_fill_(x > 0, -self._radius/self.K)
-        print(f"{b_1_lmo = }, {b_inf_lmo = }")
+        b_inf_lmo = torch.full_like(x, fill_value=self._radius_inf ).masked_fill_(x > 0, -self._radius_inf )
+        # print(f"{b_1_lmo = },\n{b_inf_lmo = }")
         # return the smaller of the two
         return torch.min(b_1_lmo, b_inf_lmo)
 
     @torch.no_grad()
     def shift_inside(self, x):
-        """Projects x to the LpBall with radius r.
-        NOTE: This is a valid projection, although not the one mapping to minimum distance points.
-        """
+        """Projects x to the K-Norm-Ball = min( B_1(r), B_inf(r/K) )."""
         super().shift_inside(x)
-        x_norm = torch.norm(x, p=self.p)
-        return self._radius * x.div(x_norm) if x_norm > self._radius else x
+
+        # Project to L1 ball with radius r
+        x_norm_1 = torch.norm(x, p=1)
+        if x_norm_1 > self._radius:
+            x.div_(x_norm_1).mul_(self._radius)
+
+        # Project to L_infinity ball with radius r/K
+        x_inf_norm = torch.norm(x, p=float('inf'))
+        if x_inf_norm > self._radius_inf:
+            x.sign_().mul_(self._radius_inf)
+
+        return x
 
     @torch.no_grad()
     def euclidean_project(self, x):

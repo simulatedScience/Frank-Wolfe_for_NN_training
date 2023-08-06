@@ -29,6 +29,24 @@ training_params = {
 }
 optimizer_params = [
     {
+        "optimizer_type": "mSFW",
+        "learning_rate": 0.01,
+        "momentum": 0.9,
+        "constraints_type": "knorm",
+        "constraints_radius": 300,
+        "constraints_K": 1000,
+        "rescale": "gradient",
+    },
+    {
+        "optimizer_type": "mSFW",
+        "learning_rate": 0.01,
+        "momentum": 0.9,
+        "constraints_type": "knorm",
+        "constraints_radius": 300,
+        "constraints_K": 2500,
+        "rescale": "gradient",
+    },
+    {
         "optimizer_type": "Adam",
         "learning_rate": 0.01,
         "epsilon": 1e-7,
@@ -88,24 +106,6 @@ optimizer_params = [
         "constraints_K": 2500,
         "rescale": "gradient",
     },
-    # {
-    #     "optimizer_type": "mSFW",
-    #     "learning_rate": 0.01,
-    #     "momentum": 0.9,
-    #     "constraints_type": "knorm",
-    #     "constraints_radius": 300,
-    #     "constraints_K": 1000,
-    #     "rescale": "gradient",
-    # },
-    # {
-    #     "optimizer_type": "mSFW",
-    #     "learning_rate": 0.01,
-    #     "momentum": 0.9,
-    #     "constraints_type": "knorm",
-    #     "constraints_radius": 300,
-    #     "constraints_K": 2500,
-    #     "rescale": "gradient",
-    # },
 ]
 # {
 #     "optimizer": ["adam", "c_adam"],
