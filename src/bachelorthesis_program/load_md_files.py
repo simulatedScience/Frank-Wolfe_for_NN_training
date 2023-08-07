@@ -90,7 +90,7 @@ def get_value(raw_value):
     # dicts
     if "{" in raw_value:
         contents = raw_value[1:-1].split(", ")
-        return {sub_value.split(":")[0].strip():
+        return {get_value(sub_value.split(":")[0].strip()):
                 get_value(sub_value.split(":")[1].strip()) for sub_value in contents
             }
     # lists

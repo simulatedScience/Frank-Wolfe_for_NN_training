@@ -175,10 +175,15 @@ def dataset_to_pytorch(dataset: tuple[tuple[np.ndarray]]) -> tuple[tuple[torch.T
     train_data, test_data = dataset
     x_train, y_train = train_data
     x_test, y_test = test_data
-    x_train = torch.from_numpy(x_train).float()
-    y_train = torch.from_numpy(y_train).long()
-    x_test = torch.from_numpy(x_test).float()
-    y_test = torch.from_numpy(y_test).long()
+    
+    if not isinstance(x_train, torch.Tensor):
+        x_train = torch.from_numpy(x_train).float()
+    if not isinstance(y_train, torch.Tensor):
+        y_train = torch.from_numpy(y_train).long()
+    if not isinstance(x_test, torch.Tensor):
+        x_test = torch.from_numpy(x_test).float()
+    if not isinstance(y_test, torch.Tensor):
+        y_test = torch.from_numpy(y_test).long()
     train_data = (x_train, y_train)
     test_data = (x_test, y_test)
     return train_data, test_data

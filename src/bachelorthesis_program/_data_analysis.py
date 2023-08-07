@@ -421,8 +421,9 @@ if __name__ == "__main__":
     # study_folder = "bachelor_thesis_parameter_study_chem"
     # study_folder = "bachelor_thesis_param_study_fastcAdam"
     # study_folder = "2021-10-17_00-01-14_parameter_study"
-    # summary_filepaths_filepath = 'summary_filepath_dict.pickle'
-    study_folder = "C:\\future_D\\uni\\Humboldt Uni\\Nebenhoerer SoSe 2023\\FW_NN_training\\src\\bachelorthesis_program\\training_info\\2023-08-06_20-41-19_parameter_study"
+    # study_folder = "C:\\future_D\\uni\\Humboldt Uni\\Nebenhoerer SoSe 2023\\FW_NN_training\\src\\bachelorthesis_program\\training_info\\2023-08-06_20-41-19_parameter_study"
+    study_folder = "C:\\future_D\\uni\\Humboldt Uni\\Nebenhoerer SoSe 2023\\FW_NN_training\\src\\bachelorthesis_program\\training_info\\2023-08-07_00-24-41_mnist_sfw_parameter_study"
+    # study_folder = "C:\\future_D\\uni\\Humboldt Uni\\Nebenhoerer SoSe 2023\\FW_NN_training\\src\\bachelorthesis_program\\training_info\\2023-08-07_10-43-21_mnist_reg_sfw_parameter_study"
     start_time = time.time()
     summary_filepaths_filepath = statistical_analysis_of_study(study_folder)
     end_time = time.time()
@@ -431,6 +432,7 @@ if __name__ == "__main__":
     # summary file mnist old
     # summary_filepaths_filepath = r"d:\Uni\Humboldt Uni\Semester 4\Bachelorarbeit\programme\neural net testing program v2\training_info\bachelor_thesis_parameter_study_chem\summary_filepath_dict.pickle"
     # summary file mnist new (with correct cAdam)
+    # summary_filepaths_filepath = 'summary_filepath_dict.pickle'
     # summary_filepaths_filepath = r"d:\Uni\Humboldt Uni\Semester 4\Bachelorarbeit\programme\neural net testing program v2\training_info\bachelor_thesis_pstudy_mnist_2\summary_filepath_dict.pickle"
     print(f"summary_filepaths_filepath = \n{summary_filepaths_filepath}")
 

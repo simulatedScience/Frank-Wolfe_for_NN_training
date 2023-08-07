@@ -57,6 +57,16 @@ class NeuralNet(nn.Module):
 
         self.network = nn.Sequential(*layers)
 
+    def init_testing(self):
+        """
+        Initialize the network for testing
+        """
+        self.network.eval()
+        self.history["test_loss"] = []
+        if self.track_accuracy:
+            self.history["test_accuracy"] = []
+        
+
     def forward(self, x: torch.Tensor):
         """
         Pass an input x through the network and get the NNs output
@@ -128,7 +138,7 @@ class NeuralNet(nn.Module):
         self.optimizer = optimizer
         
     @torch.no_grad()
-    def evaluate(self, x_val, y_val, batch_size=32, device="cpu"):
+    def evaluate(self, x_val, y_val, batch_size=32, device="cpu", test_mode=False):
         """
         Evaluate the model on the validation data
 
@@ -150,9 +160,13 @@ class NeuralNet(nn.Module):
             val_loss += self.loss_function(output, y_batch).item()
             val_output.append(output)
         val_output = torch.cat(val_output)
-        self.history["val_loss"].append(val_loss)
+        if test_mode:
+            prefix = "test_"
+        else:
+            prefix = "val_"
+        self.history[prefix + "loss"].append(val_loss)
         if self.track_accuracy:
-            self.history["val_accuracy"].append(calculate_accuracy(val_output, y_val, device=device))
+            self.history[prefix + "accuracy"].append(calculate_accuracy(val_output, y_val, device=device))
         return val_loss, val_output
 
     def fit_batch(self, x_data, y_data, constraints=None, device="cpu"):
@@ -257,10 +271,18 @@ def set_optimizer(
     if not isinstance(optimizer, str):
         torch_optimizer = optimizer
     if optimizer.lower() == "adam": # Adam
-        torch_optimizer = optim.Adam(model.parameters(), lr=params["learning_rate"], eps=params["epsilon"],
-                          betas=(params.get("beta_1", 0.9), params.get("beta_2", 0.999)))
+        torch_optimizer = optim.Adam(
+            model.parameters(),
+            lr=params["learning_rate"],
+            eps=params["epsilon"],
+            betas=(params.get("beta_1", 0.9), params.get("beta_2", 0.999)),
+            weight_decay=params.get("weight_decay", 0),
+        )
     elif optimizer.lower() == "sgd": # Stochastic Gradient Descent
-        torch_optimizer = optim.SGD(model.parameters(), lr=params["learning_rate"])
+        torch_optimizer = optim.SGD(
+            model.parameters(),
+            lr=params["learning_rate"],
+            weight_decay=params.get("weight_decay", 0),)
     elif optimizer.lower() == "msfw": # Stochastic Frank-Wolfe with momentum
         torch_optimizer = SFW(model.parameters(),
                    learning_rate=params["learning_rate"],

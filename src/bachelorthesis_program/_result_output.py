@@ -251,25 +251,20 @@ if __name__ == "__main__":
     # file dialog to choose study_folder
     from tkinter import filedialog
     # study_folder = filedialog.askdirectory(initialdir=".", title="Select study folder")
-    study_folder = filedialog.askdirectory(title="Select study folder")
-    study_folder = study_folder.split("/")[-1]
-    # study_folder = "2021-09-09_21-56-12_parameter_study_debug"
+    # study_folder = filedialog.askdirectory(title="Select study folder")
+    # study_folder = study_folder.split("/")[-1]
 
     # mnist
-    # study_folder = "bachelor_thesis_parameter_study_mnist"
-    # study_folder = "2021-10-17_00-01-14_parameter_study"
-    # study_folder = "bachelor_thesis_pstudy_mnist_2"
-    # # metrics = ["training_time", "test_loss", "test_accuracy"]
-    # metrics = ["training_time_avg", "final_val_accuracy_avg"]
-    # show_all_results(metrics=metrics, study_folder=study_folder, expriment_name="MNIST_revised")
+    study_folder = "C:\\future_D\\uni\\Humboldt Uni\\Nebenhoerer SoSe 2023\\FW_NN_training\\src\\bachelorthesis_program\\training_info\\2023-08-07_00-24-41_mnist_sfw_parameter_study"
+    # study_folder = "2021-09-09_21-56-12_parameter_study_debug"
 
     # # chemex
     # study_folder = "bachelor_thesis_parameter_study_chem"
     # metrics = ["training_time_avg", "final_val_loss_mae_avg", "test_loss_avg"]
-    # metrics = ["training_time_avg", "test_loss_avg", "test_accuracy_avg"]
-    metrics = ["training_time_avg", "test_loss_avg"]
+    metrics = ["training_time_avg", "test_loss_avg", "test_accuracy_avg"]
+    # metrics = ["training_time_avg", "test_loss_avg"]
     # metrics = ["final_val_loss_mae_avg"]
-    show_all_results(metrics=metrics, study_folder=study_folder, filename="parameter_analysis_avg.pickle", experiment_name="sfw_1")
+    show_all_results(metrics=metrics, study_folder=study_folder, filename="parameter_analysis_avg.pickle", experiment_name="sfw_mnist")
     # show_all_results(metrics=metrics, study_folder=study_folder, filename="parameter_analysis_avg.pickle", experiment_name="chemReg_Adam")
     # show_all_results(metrics=metrics, study_folder=study_folder, filename="parameter_analysis_std.pickle", expriment_name="chemReg_Adam_std")
     # show_all_results(metrics=metrics, study_folder=study_folder, filename="parameter_analysis_min.pickle", expriment_name="chemReg_Adam_min")
