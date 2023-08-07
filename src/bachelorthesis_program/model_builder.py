@@ -45,7 +45,7 @@ class NeuralNet(nn.Module):
 
         # Building the network
         layers = []
-        input_size = model_params["input_shape"][0] * model_params["input_shape"][1]
+        input_size = np.prod(model_params["input_shape"]) if isinstance(model_params["input_shape"], tuple) else model_params["input_shape"]
         for idx, n_neurons in enumerate(model_params["neurons_per_layer"]):
             layers.append(nn.Linear(input_size, n_neurons))
             layers.append(self.get_activation(self.activations[idx]))
@@ -116,6 +116,8 @@ class NeuralNet(nn.Module):
             return nn.Sigmoid()
         elif activation_name.lower() == "softmax":
             return nn.Softmax(dim=-1)
+        elif activation_name.lower() == "linear":
+            return nn.Identity()
         else:
             raise ValueError(f"Unsupported activation function: {activation_name}")
 

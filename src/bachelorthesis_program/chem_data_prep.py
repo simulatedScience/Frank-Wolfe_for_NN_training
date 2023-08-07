@@ -1,5 +1,10 @@
-from chem_data.parse_chem_data import parse_chem_data
+import os
+
 import sklearn.utils as skutils
+import torch
+
+from chem_data.parse_chem_data import parse_chem_data
+
 
 def load_chem_data(test_samples=None, test_percentage=None):
     """
@@ -9,7 +14,7 @@ def load_chem_data(test_samples=None, test_percentage=None):
     """
     if test_samples is None and test_percentage is None:
         test_percentage = 0.1
-    inputs, outputs = parse_chem_data("chem_data/features_augmented_05percent.arff")
+    inputs, outputs = parse_chem_data(os.path.join(os.path.dirname(__file__), "chem_data", "features_augmented_05percent.arff"))
     return test_split(inputs, outputs, test_samples=test_samples, test_percentage=test_percentage)
 
 def test_split(inputs, outputs, test_samples=None, test_percentage=None):
@@ -22,8 +27,10 @@ def test_split(inputs, outputs, test_samples=None, test_percentage=None):
     shuffled_in, shuffled_out = skutils.shuffle(inputs, outputs) # shuffle both sets identically
     if test_percentage is not None:
         test_samples = round(len(inputs)*test_percentage)
-    x_train = shuffled_in[test_samples:]
-    y_train = shuffled_out[test_samples:]
-    x_test  = shuffled_in[:test_samples]
-    y_test  = shuffled_out[:test_samples]
+    x_train = torch.tensor(shuffled_in[test_samples:], dtype=torch.float32)
+    y_train = torch.tensor(shuffled_out[test_samples:], dtype=torch.float32)
+    y_train = y_train.reshape((y_train.shape[0], 1))
+    x_test  = torch.tensor(shuffled_in[:test_samples], dtype=torch.float32)
+    y_test  = torch.tensor(shuffled_out[:test_samples], dtype=torch.float32)
+    y_test = y_test.reshape((y_test.shape[0], 1))
     return (x_train, y_train), (x_test, y_test)

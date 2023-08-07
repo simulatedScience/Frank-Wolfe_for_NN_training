@@ -255,44 +255,17 @@ if __name__ == "__main__":
     # study_folder = study_folder.split("/")[-1]
 
     # mnist
-    study_folder = "C:\\future_D\\uni\\Humboldt Uni\\Nebenhoerer SoSe 2023\\FW_NN_training\\src\\bachelorthesis_program\\training_info\\2023-08-07_00-24-41_mnist_sfw_parameter_study"
+    # study_folder = "C:\\future_D\\uni\\Humboldt Uni\\Nebenhoerer SoSe 2023\\FW_NN_training\\src\\bachelorthesis_program\\training_info\\2023-08-07_00-24-41_mnist_sfw_parameter_study"
+    # study_folder = "C:\\future_D\\uni\\Humboldt Uni\\Nebenhoerer SoSe 2023\\FW_NN_training\\src\\bachelorthesis_program\\training_info\\2023-08-07_10-43-21_mnist_reg_sfw_parameter_study"
+    study_folder = "C:\\future_D\\uni\\Humboldt Uni\\Nebenhoerer SoSe 2023\\FW_NN_training\\src\\bachelorthesis_program\\training_info\\2023-08-07_15-30-46_chemreg_reg_sfw_parameter_study"
     # study_folder = "2021-09-09_21-56-12_parameter_study_debug"
 
     # # chemex
     # study_folder = "bachelor_thesis_parameter_study_chem"
-    # metrics = ["training_time_avg", "final_val_loss_mae_avg", "test_loss_avg"]
-    metrics = ["training_time_avg", "test_loss_avg", "test_accuracy_avg"]
+    # metrics = ["training_time_avg", "test_loss_avg", "test_accuracy_avg"]
+    # show_all_results(metrics=metrics, study_folder=study_folder, filename="parameter_analysis_avg.pickle", experiment_name="sfw_mnist")
+    # metrics = ["final_val_loss_mae_avg"]
+    metrics = ["training_time_avg", "final_val_loss_mae_avg", "test_loss_avg"]
     # metrics = ["training_time_avg", "test_loss_avg"]
-    # metrics = ["final_val_loss_mae_avg"]
-    show_all_results(metrics=metrics, study_folder=study_folder, filename="parameter_analysis_avg.pickle", experiment_name="sfw_mnist")
-    # show_all_results(metrics=metrics, study_folder=study_folder, filename="parameter_analysis_avg.pickle", experiment_name="chemReg_Adam")
-    # show_all_results(metrics=metrics, study_folder=study_folder, filename="parameter_analysis_std.pickle", expriment_name="chemReg_Adam_std")
-    # show_all_results(metrics=metrics, study_folder=study_folder, filename="parameter_analysis_min.pickle", expriment_name="chemReg_Adam_min")
-    # show_all_results(metrics=metrics, study_folder=study_folder, filename="parameter_analysis_max.pickle", expriment_name="chemReg_Adam_max")
+    show_all_results(metrics=metrics, study_folder=study_folder, filename="parameter_analysis_avg.pickle", experiment_name="chemreg-b")
 
-    # # fast cAdam
-    # study_folder = "bachelor_thesis_param_study_fastcAdam"
-    # metrics = ["training_time", "test_accuracy"]
-    # show_all_results(
-    #     metrics=metrics, study_folder=study_folder, label_prefix="fast_")
-
-    # # Adam variant comparison
-    # study_folder = "bachelor_thesis_adam_variants"
-    # metrics = ["training_time", "test_accuracy"]
-    # show_all_results(
-    #     metrics=metrics, study_folder=study_folder, label_prefix="variant_")
-    # study_folder = "adam_variants_with_sgd"
-    # study_folder = "adam_variants_with_fcadam"
-    # metrics = ["training_time_avg", "test_accuracy_avg"]
-    # show_all_results(
-    #     metrics=metrics, study_folder=study_folder, label_prefix="variant_", expriment_name="cadam_variants")
-
-    # study_folder = "cadam_speed_study"
-    # metrics = ["training_time_avg", "test_accuracy_avg"]
-    # show_all_results(
-    #     metrics=metrics, study_folder=study_folder, label_prefix="variant_", expriment_name="cadam_speed")
-    # ML paper chemReg cAdam study
-    # study_folder = "ML_paper_chemReg_cAdam_study"
-    # # metrics = ["training_time", "test_loss"]
-    # metrics = ["final_val_loss_mae_avg"]
-    # show_all_results(metrics=metrics, study_folder=study_folder, filename="parameter_analysis_avg.pickle", expriment_name="chemReg_cAdam")
