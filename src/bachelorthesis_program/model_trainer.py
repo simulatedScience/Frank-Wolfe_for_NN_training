@@ -96,4 +96,45 @@ def choose_training_data(data: tuple[np.ndarray], data_percentage: float = 1):
 
 
 if __name__ == "__main__":
-    print("use multiprocessing:", auto_use_multiprocessing())
+    # print("use multiprocessing:", auto_use_multiprocessing())
+    model_params = {
+        "neurons_per_layer"       : (64, 16),
+        "input_shape"             : 36,
+        "output_shape"            : 1,
+        "activation_functions"    : "relu",
+        "last_activation_function": "linear",
+        "layer_types"             : "dense",
+        "loss_function"           : "mean_squared_error",
+        "training_data_percentage": 1,
+        "number_of_epochs"     : 50,
+        "batch_size"           : 100,
+        "validation_split"     : 0.2,
+        "number_of_repetitions": 5,
+    }
+    optimizer_params = {
+        "optimizer_type": "Adam",
+        "learning_rate": 0.01,
+        "epsilon": 1e-7,
+        "beta_1": 0.9,
+        "beta_2": 0.999,
+        "weight_decay": 0.01,
+    }
+    from chem_data_prep import load_chem_data
+    dataset = load_chem_data()
+    x_train, y_train = dataset[0]
+    filepath = "test_adam_training"
+    trained_model, history = train_model(
+        model_params=model_params,
+        optimizer_params=optimizer_params,
+        training_data=(x_train, y_train),
+        sub_folders=filepath,
+        verbose=2
+    )
+    from file_management import save_picklable_object
+    save_time = time.time()
+    save_picklable_object(
+        history,
+        filename="history.pickle",
+        save_time=history.save_time,
+        sub_folders=filepath)
+    print(history)

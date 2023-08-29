@@ -229,6 +229,8 @@ class NeuralNet(nn.Module):
         else:
             x_validation, y_validation = None, None
         
+        batch_counter = 0
+        lr_half_interval = 500
         for epoch in range(epochs):
             # shuffle data
             x_train, y_train = skutils.shuffle(x_train, y_train)
@@ -238,6 +240,12 @@ class NeuralNet(nn.Module):
                 y_batch = y_train[i:i+batch_size]
                 x_batch, y_batch = x_batch.to(device), y_batch.to(device)
                 self.fit_batch(x_batch, y_batch, constraints=self.constraints, device=device)
+                if isinstance(self.optimizer, optim.Adam):
+                    batch_counter += 1
+                    if batch_counter % lr_half_interval == 0:
+                        self.optimizer.param_groups[0]['lr'] /= 2
+                        self.optimizer.param_groups[0]['lr'] = max(self.optimizer.param_groups[0]['lr'], 1e-6)
+                        print(f"new lr in epoch {epoch} batch {i}: {self.optimizer.param_groups[0]['lr']}")
             # evaluate model
             if x_validation is not None:
                 self.evaluate(x_validation, y_validation, batch_size=batch_size, device=device)

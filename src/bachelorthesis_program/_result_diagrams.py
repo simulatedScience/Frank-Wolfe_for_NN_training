@@ -122,7 +122,8 @@ def main(study_folder, metric: str = "val_loss"):
 if __name__ == '__main__':
     import tkfilebrowser
     # let user choose several folders to plot
-    # folder_paths = tkfilebrowser.askopendirnames(title='Choose batch folders to plot')
+    folder_paths = tkfilebrowser.askopendirnames(title='Choose batch folders to plot')
+    plot_batches_group(folder_paths, metric="val_loss", title_addon=f"\nhidden layers: (64, 16)")
 
     # # MNIST diagrams #1 (32, 64)
     # study_folder = "C:\\future_D\\uni\\Humboldt Uni\\Nebenhoerer SoSe 2023\\FW_NN_training\\src\\bachelorthesis_program\\training_info\\2023-08-07_10-43-21_mnist_reg_sfw_parameter_study"

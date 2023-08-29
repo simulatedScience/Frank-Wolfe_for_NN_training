@@ -1,3 +1,4 @@
 datasets
 checkpoints
 training_info
+*.pyc
